@@ -423,16 +423,30 @@
                 document.body.style.overflow = '';
             }
         }
-    // Albums, images, and memories are stored in browser memory
-    let albums = [{ name: 'Recents', images: [
-        {src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80', title: 'Mountain Lake', date: new Date('2024-01-15')},
-        {src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80', title: 'Desert Dunes', date: new Date('2024-01-20')},
-        {src: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80', title: 'Forest Path', date: new Date('2024-02-05')},
-    ]}];
+
+    // Only one album for now, all images from backend
+    let albums = [{ name: 'Recents', images: [] }];
     let currentAlbum = 0;
     let memories = ['Trip to Lake', 'Desert Adventure'];
     let currentTab = 'photos';
     let deleteMode = false;
+
+
+    // Use relative URLs for API requests (works with dynamic tunnels)
+    const API_BASE = '';
+
+    // Fetch images from backend
+    async function fetchImagesFromBackend() {
+        try {
+            const res = await fetch(`/photos`);
+            const urls = await res.json();
+            // Use file name as title, date is not available from backend
+            albums[0].images = urls.map(url => ({ src: url, title: url.split('/').pop(), date: new Date() }));
+            renderGallery();
+        } catch (e) {
+            console.error('Failed to fetch images:', e);
+        }
+    }
 
     function renderAlbums() {
         const sel = document.getElementById('albumSelect');
@@ -571,20 +585,26 @@ function modalNext(ev) {
         }
     }
 
-    function handleImageUpload(e) {
+    async function handleImageUpload(e) {
         const files = e.target.files;
+        if (!files.length) return;
+        const formData = new FormData();
         for (let file of files) {
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                const now = new Date();
-                albums[currentAlbum].images.unshift({src: ev.target.result, title: file.name, date: now});
-                renderGallery();
-            };
-            reader.readAsDataURL(file);
+            formData.append('photos', file);
+        }
+        try {
+            await fetch(`/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            await fetchImagesFromBackend();
+        } catch (err) {
+            alert('Upload failed.');
         }
         e.target.value = '';
     }
 
+    // Delete functionality is local only for now
     function deleteImage(idx) {
         if (!deleteMode) return;
         albums[currentAlbum].images.splice(idx, 1);
@@ -635,7 +655,7 @@ function modalNext(ev) {
 
     // Initial render
     renderAlbums();
-    renderGallery();
+    fetchImagesFromBackend();
     renderMemories();
     </script>
 </body>
