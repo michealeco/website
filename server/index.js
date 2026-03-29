@@ -16,6 +16,9 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 // CORS for all origins (adjust for production)
 app.use(cors());
 
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Serve uploaded images statically
 app.use('/uploads', express.static(UPLOADS_DIR));
 
