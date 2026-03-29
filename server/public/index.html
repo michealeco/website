@@ -1,23 +1,672 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Family Cloud</title>
-	<style>
-		html, body {
-			height: 100%;
-			margin: 0;
-			padding: 0;
-			font-family: 'SF Pro Display', 'Segoe UI', 'San Francisco', 'Helvetica Neue', Arial, sans-serif;
-			background: linear-gradient(135deg, #f7f8fa 0%, #e9eaf3 100%) fixed, url('https://www.transparenttextures.com/patterns/cubes.png');
-			color: #23272f;
-			letter-spacing: 0.01em;
-		}
-		...existing code...
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Cloud</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'SF Pro Display', 'Segoe UI', 'San Francisco', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f7f8fa 0%, #e9eaf3 100%) fixed, url('https://www.transparenttextures.com/patterns/cubes.png');
+            color: #23272f;
+            letter-spacing: 0.01em;
+        }
+                        body {
+                            min-height: 100vh;
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        .appbar {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100vw;
+                            height: 56px;
+                            background: linear-gradient(90deg, #fff 60%, #f2f7ff 100%);
+                            box-shadow: 0 2px 12px rgba(44,62,80,0.10);
+                            display: flex;
+                            align-items: center;
+                            z-index: 100;
+                        }
+                        .appbar-title {
+                            font-size: 1.35rem;
+                            font-weight: 700;
+                            margin-left: 1.2rem;
+                            letter-spacing: 0.5px;
+                            color: #23272f;
+                            text-shadow: 0 1px 0 #fff, 0 2px 8px rgba(44,62,80,0.04);
+                        }
+                        .container {
+                            max-width: 500px;
+                            margin: 74px auto 74px auto;
+                            padding: 0 0.7rem;
+                            width: 100vw;
+                        }
+                        .controls {
+                            display: flex;
+                            flex-direction: row;
+                            gap: 1.2rem;
+                            margin-bottom: 0.9rem;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+                        .controls-row {
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                        }
+                        .controls label {
+                            font-size: 1em;
+                            color: #5a5a5a;
+                            margin-right: 0.2em;
+                        }
+                        .controls select, .controls button {
+                            font-size: 1em;
+                            padding: 0.38em 1.1em;
+                            border-radius: 10px;
+                            border: 1.5px solid #e0e4ef;
+                            background: #fff;
+                            color: #23272f;
+                            margin-right: 0.2em;
+                            transition: box-shadow 0.18s, border 0.18s, background 0.18s;
+                            box-shadow: 0 1px 4px rgba(44,62,80,0.04);
+                            outline: none;
+                        }
+                        .controls button:hover, .controls select:focus {
+                            border: 1.5px solid #007aff;
+                            box-shadow: 0 2px 12px rgba(0,122,255,0.10);
+                            background: #f2f7ff;
+                        }
+                        .controls button:active {
+                            background: #e9eaf3;
+                        }
+                        .delete-bar {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            background: linear-gradient(90deg, #ffeaea 60%, #fff 100%);
+                            color: #e74c3c;
+                            border-radius: 10px;
+                            padding: 0.5em 1.2em;
+                            margin-bottom: 0.8em;
+                            font-weight: 600;
+                            font-size: 1em;
+                            box-shadow: 0 1px 8px rgba(231,76,60,0.08);
+                        }
+                        .memories {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 0.5em;
+                            margin-bottom: 0.7em;
+                        }
+                        .memories span {
+                            background: linear-gradient(90deg, #f2f7ff 60%, #e9eaf3 100%);
+                            color: #007aff;
+                            padding: 0.3em 1.1em;
+                            border-radius: 12px;
+                            font-size: 1.01rem;
+                            margin-right: 0.1em;
+                            margin-bottom: 0.1em;
+                            box-shadow: 0 1px 4px rgba(44,62,80,0.04);
+                        }
+                        .gallery {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 0.7rem;
+                            width: 100%;
+                            margin: 0 auto;
+                            padding-bottom: 1.5em;
+                        }
+                        .image-card {
+                            background: linear-gradient(135deg, #fff 80%, #f2f7ff 100%);
+                            border-radius: 18px;
+                            box-shadow: 0 4px 24px 0 rgba(0,122,255,0.10), 0 1.5px 8px 0 rgba(44,62,80,0.08);
+                            overflow: hidden;
+                            display: flex;
+                            flex-direction: column;
+                            width: calc(33.333% - 0.47rem);
+                            margin-bottom: 0.7rem;
+                            position: relative;
+                            transition: box-shadow 0.22s, transform 0.16s, border 0.18s;
+                            border: 1.5px solid #e0e4ef;
+                        }
+                        .image-card:hover {
+                            box-shadow: 0 12px 48px 0 rgba(0,122,255,0.18), 0 2.5px 16px 0 rgba(44,62,80,0.13);
+                            transform: translateY(-6px) scale(1.045);
+                            border: 1.5px solid #007aff;
+                        }
+                        .image-card img {
+                            width: 100%;
+                            display: block;
+                            object-fit: cover;
+                            background: #f2f2f7;
+                            border-radius: 18px 18px 0 0;
+                            transition: filter 0.2s, box-shadow 0.2s;
+                            aspect-ratio: unset;
+                            box-shadow: 0 1.5px 8px 0 rgba(0,122,255,0.07);
+                        }
+                        .image-card img:hover {
+                            filter: brightness(1.04) saturate(1.13);
+                            box-shadow: 0 4px 24px 0 rgba(0,122,255,0.13);
+                        }
+                        .image-card img:hover {
+                            filter: brightness(0.97) saturate(1.1);
+                        }
+                        .image-title {
+                            display: none;
+                        }
+                        /* Month header styling */
+                        .gallery > div[style*="font-weight:600"] {
+                            font-size: 1.13em !important;
+                            color: #007aff !important;
+                            margin-top: 1.1em !important;
+                            margin-bottom: 0.3em !important;
+                            letter-spacing: 0.7px !important;
+                            text-shadow: 0 1px 0 #fff, 0 2px 8px rgba(44,62,80,0.04);
+                        }
+                        /* Delete button on image */
+                        .delete-btn {
+                            position: absolute;
+                            top: 7px;
+                            right: 7px;
+                            background: rgba(255,255,255,0.92);
+                            border: none;
+                            border-radius: 50%;
+                            width: 28px;
+                            height: 28px;
+                            font-size: 1.2em;
+                            line-height: 1;
+                            color: #e74c3c;
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+                            cursor: pointer;
+                            z-index: 2;
+                            transition: background 0.2s, box-shadow 0.2s;
+                        }
+                        .delete-btn:hover {
+                            background: #ffeaea;
+                            box-shadow: 0 2px 8px rgba(231,76,60,0.13);
+                        }
+                        @media (max-width: 900px) {
+                            .container {
+                                max-width: 100vw;
+                            }
+                            .image-card {
+                                width: calc(50% - 0.47rem);
+                            }
+                        }
+                        @media (max-width: 600px) {
+                            .container {
+                                padding: 0 0.2rem;
+                                margin-top: 56px;
+                                margin-bottom: 70px;
+                            }
+                            .gallery {
+                                gap: 0.5rem;
+                            }
+                            .image-card {
+                                width: 100%;
+                                border-radius: 14px;
+                                margin-bottom: 1.1rem;
+                            }
+                            .image-card img {
+                                border-radius: 14px 14px 0 0;
+                            }
+                            .controls {
+                                flex-direction: column;
+                                gap: 0.7rem;
+                                align-items: stretch;
+                            }
+                            .controls-row {
+                                flex-direction: column;
+                                gap: 0.5rem;
+                                align-items: stretch;
+                            }
+                            .controls button[title="Upload images"] {
+                                width: 100%;
+                                font-size: 1.1em;
+                                padding: 0.7em 0;
+                                margin: 0;
+                            }
+                            .appbar {
+                                height: 54px;
+                                padding: 0 0.5em;
+                            }
+                            .appbar-title {
+                                font-size: 1.13rem;
+                            }
+                        }
+                        .bottom-nav {
+                            position: fixed;
+                            left: 0;
+                            bottom: 0;
+                            width: 100vw;
+                            height: 56px;
+                            background: linear-gradient(90deg, #fff 60%, #f2f7ff 100%);
+                            border-top: 1px solid #e0e4ef;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-around;
+                            z-index: 200;
+                            box-shadow: 0 -2px 12px rgba(44,62,80,0.10);
+                        }
+                        .bottom-nav-btn {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            color: #8e8e93;
+                            font-size: 0.92rem;
+                            flex: 1;
+                            height: 100%;
+                            cursor: pointer;
+                            transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+                            border-radius: 12px 12px 0 0;
+                        }
+                        .bottom-nav-btn.active {
+                            color: #007aff;
+                            background: #f2f7ff;
+                            box-shadow: 0 -2px 8px #cbe6ff33;
+                        }
+                        .bottom-nav-btn:active {
+                            background: #e9eaf3;
+                        }
+                        /* Modal overlay improvements */
+                        .modal-viewer {
+                            position: fixed;
+                            top: 0; left: 0; width: 100vw; height: 100vh;
+                            background: rgba(30,34,45,0.72);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 9999;
+                            opacity: 0;
+                            pointer-events: none;
+                            transition: opacity 0.22s;
+                        }
+                        .modal-viewer.active {
+                            opacity: 1;
+                            pointer-events: auto;
+                        }
+                        .modal-content {
+                            background: linear-gradient(135deg, #fff 80%, #f2f7ff 100%);
+                            border-radius: 18px;
+                            box-shadow: 0 8px 48px rgba(44,62,80,0.18);
+                            padding: 1.2em 1.2em 0.7em 1.2em;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            min-width: 260px;
+                            min-height: 260px;
+                            max-width: 92vw;
+                            max-height: 92vh;
+                            position: relative;
+                        }
+                        .modal-img {
+                            max-width: 70vw;
+                            max-height: 60vh;
+                            border-radius: 14px;
+                            box-shadow: 0 2px 16px rgba(44,62,80,0.13);
+                            margin-bottom: 0.7em;
+                            background: #f2f2f7;
+                        }
+                        .modal-title {
+                            font-size: 1.08em;
+                            font-weight: 600;
+                            color: #23272f;
+                            margin-bottom: 0.5em;
+                            text-align: center;
+                            text-shadow: 0 1px 0 #fff, 0 2px 8px rgba(44,62,80,0.04);
+                        }
+                        .modal-close {
+                            position: absolute;
+                            top: 0.7em;
+                            right: 0.7em;
+                            background: #fff;
+                            border: none;
+                            border-radius: 50%;
+                            width: 32px;
+                            height: 32px;
+                            font-size: 1.3em;
+                            color: #e74c3c;
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        }
+                        .modal-close:hover {
+                            background: #ffeaea;
+                        }
+                        .modal-arrow {
+                            position: absolute;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            background: #fff;
+                            border: none;
+                            border-radius: 50%;
+                            width: 32px;
+                            height: 32px;
+                            font-size: 1.2em;
+                            color: #007aff;
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        }
+                        .modal-arrow.left {
+                            left: 0.7em;
+                        }
+                        .modal-arrow.right {
+                            right: 0.7em;
+                        }
+                        .modal-arrow:hover {
+                            background: #f2f7ff;
+                        }
+                        @media (max-width: 600px) {
+                            .modal-content {
+                                min-width: 0;
+                                min-height: 0;
+                                max-width: 98vw;
+                                max-height: 98vh;
+                                padding: 0.5em 0.2em 0.2em 0.2em;
+                            }
+                            .modal-img {
+                                max-width: 92vw;
+                                max-height: 60vh;
+                            }
+                        }
+                    </style>
+    </style>
 </head>
 <body>
-	...existing code...
+    <div class="appbar">
+        <div class="appbar-title">Photos</div>
+    </div>
+    <div class="container">
+        <div class="controls">
+            <div class="controls-row">
+                <label for="albumSelect">Albums</label>
+                <select id="albumSelect"></select>
+                <button onclick="createAlbum()" title="Create new album" style="font-size:1.1em;padding:0.3em 0.7em;">+</button>
+                <button id="activateDeleteBtn" onclick="activateDeleteMode()" title="Delete photos" style="font-size:1em;background:#fff;color:#e74c3c;border:1.5px solid #e74c3c;box-shadow:none;">Delete</button>
+            </div>
+            <div class="controls-row">
+                <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event)">
+                <button onclick="document.getElementById('imageUpload').click()" title="Upload images" style="font-size:1em;">Upload</button>
+            </div>
+        </div>
+        <div id="deleteBar" class="delete-bar" style="display:none;">
+            <span>Tap photos to delete</span>
+            <button onclick="deactivateDeleteMode()" style="background:#e74c3c;color:#fff;border:none;border-radius:7px;padding:0.3em 1.1em;font-weight:600;">Done</button>
+        </div>
+        <div id="memories"></div>
+        <div class="gallery" id="gallery">
+            <!-- Images will be rendered here -->
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div class="bottom-nav-btn active" id="nav-photos" onclick="switchTab('photos')">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+            <span>Photos</span>
+        </div>
+        <div class="bottom-nav-btn" id="nav-memories" onclick="switchTab('memories')">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><polyline points="17 21 12 17 7 21"/></svg>
+            <span>Memories</span>
+        </div>
+    </div>
+    <script>
+        // Prevent background scroll when modal is open
+        function setModalScrollLock(active) {
+            if (active) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+    // Only one album for now, all images from backend
+    let albums = [{ name: 'Recents', images: [] }];
+    let currentAlbum = 0;
+    let memories = ['Trip to Lake', 'Desert Adventure'];
+    let currentTab = 'photos';
+    let deleteMode = false;
+
+
+    // Use relative URLs for API requests (works with dynamic tunnels)
+    const API_BASE = '';
+
+    // Fetch images from backend
+    async function fetchImagesFromBackend() {
+        try {
+            const res = await fetch(`/photos`);
+            const urls = await res.json();
+            // Use file name as title, date is not available from backend
+            albums[0].images = urls.map(url => ({ src: url, title: url.split('/').pop(), date: new Date() }));
+            renderGallery();
+        } catch (e) {
+            console.error('Failed to fetch images:', e);
+        }
+    }
+
+    function renderAlbums() {
+        const sel = document.getElementById('albumSelect');
+        sel.innerHTML = '';
+        albums.forEach((a, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = a.name;
+            sel.appendChild(opt);
+        });
+        sel.value = currentAlbum;
+    }
+
+    function renderGallery() {
+        const gal = document.getElementById('gallery');
+        gal.innerHTML = '';
+        if (deleteMode) {
+            gal.classList.add('delete-active');
+        } else {
+            gal.classList.remove('delete-active');
+        }
+        // Group images by month-year
+        const images = albums[currentAlbum].images;
+        const groups = {};
+        images.forEach((img, idx) => {
+            let d = img.date ? new Date(img.date) : new Date();
+            const key = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+            if (!groups[key]) groups[key] = [];
+            groups[key].push({ ...img, _idx: idx });
+        });
+        // Sort months descending
+        const sortedMonths = Object.keys(groups).sort((a, b) => {
+            const da = new Date(groups[a][0].date);
+            const db = new Date(groups[b][0].date);
+            return db - da;
+        });
+        let flatImages = [];
+        sortedMonths.forEach(month => {
+            // Month header
+            const monthHeader = document.createElement('div');
+            monthHeader.textContent = month;
+            monthHeader.style.cssText = 'width:100%;font-weight:600;font-size:1.08em;margin:0.7em 0 0.2em 0;color:#555;letter-spacing:0.5px;flex-basis:100%;';
+            gal.appendChild(monthHeader);
+            // Images for this month
+            const monthImages = groups[month];
+            monthImages.forEach(img => {
+                flatImages.push(img);
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                card.style.position = 'relative';
+                const image = document.createElement('img');
+                image.src = img.src;
+                image.alt = img.title || '';
+                card.appendChild(image);
+                // Delete button (only in delete mode)
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '&times;';
+                delBtn.title = 'Delete photo';
+                delBtn.className = 'delete-btn';
+                delBtn.style.cssText = 'position:absolute;top:7px;right:7px;background:rgba(255,255,255,0.85);border:none;border-radius:50%;width:28px;height:28px;font-size:1.2em;line-height:1;color:#e74c3c;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:pointer;z-index:2;transition:background 0.2s;';
+                delBtn.onmouseover = () => delBtn.style.background = '#ffeaea';
+                delBtn.onmouseout = () => delBtn.style.background = 'rgba(255,255,255,0.85)';
+                delBtn.onclick = (ev) => { ev.stopPropagation(); deleteImage(img._idx); };
+                card.appendChild(delBtn);
+                if (deleteMode) {
+                    delBtn.style.display = 'block';
+                    card.onclick = () => deleteImage(img._idx);
+                    card.style.cursor = 'pointer';
+                } else {
+                    delBtn.style.display = 'none';
+                    card.onclick = (ev) => openModalViewer(flatImages, img._idx, ev);
+                    card.style.cursor = 'zoom-in';
+                }
+                gal.appendChild(card);
+            });
+        });
+        window._flatImages = flatImages; // for modal navigation
+    }
+// Image Viewer Modal logic
+let modalState = { images: [], idx: 0 };
+function openModalViewer(images, idx, ev) {
+    if (deleteMode) return;
+    ev && ev.stopPropagation();
+    modalState.images = albums[currentAlbum].images;
+    // Find the index in the flat array
+    let flatIdx = idx;
+    if (Array.isArray(window._flatImages)) {
+        flatIdx = window._flatImages.findIndex(img => img._idx === idx);
+        modalState.images = window._flatImages;
+    }
+    modalState.idx = flatIdx;
+    const modal = document.getElementById('modalViewer');
+    const img = document.getElementById('modalImg');
+    img.src = modalState.images[modalState.idx].src;
+    img.alt = modalState.images[modalState.idx].title || '';
+    document.getElementById('modalTitle').textContent = modalState.images[modalState.idx].title || '';
+    modal.classList.add('active');
+    setModalScrollLock(true);
+}
+function closeModalViewer(ev) {
+    // Only close if click on overlay or close button
+    if (!ev || ev.target.id === 'modalViewer' || (ev.target.classList && ev.target.classList.contains('modal-close'))) {
+        document.getElementById('modalViewer').classList.remove('active');
+        setModalScrollLock(false);
+    }
+}
+function modalPrev(ev) {
+    ev && ev.stopPropagation();
+    if (modalState.idx > 0) {
+        modalState.idx--;
+        const img = document.getElementById('modalImg');
+        img.src = modalState.images[modalState.idx].src;
+        img.alt = modalState.images[modalState.idx].title || '';
+        document.getElementById('modalTitle').textContent = modalState.images[modalState.idx].title || '';
+    }
+}
+function modalNext(ev) {
+    ev && ev.stopPropagation();
+    if (modalState.idx < modalState.images.length - 1) {
+        modalState.idx++;
+        const img = document.getElementById('modalImg');
+        img.src = modalState.images[modalState.idx].src;
+        img.alt = modalState.images[modalState.idx].title || '';
+        document.getElementById('modalTitle').textContent = modalState.images[modalState.idx].title || '';
+    }
+}
+
+    function renderMemories() {
+        const memDiv = document.getElementById('memories');
+        memDiv.innerHTML = '';
+        if (currentTab === 'memories') {
+            memDiv.style.display = 'flex';
+            memDiv.innerHTML = memories.map(m => `<span>${m}</span>`).join('');
+        } else {
+            memDiv.style.display = 'none';
+        }
+    }
+
+    async function handleImageUpload(e) {
+        const files = e.target.files;
+        if (!files.length) return;
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('photos', file);
+        }
+        try {
+            await fetch(`/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            await fetchImagesFromBackend();
+        } catch (err) {
+            alert('Upload failed.');
+        }
+        e.target.value = '';
+    }
+
+    // Delete functionality is local only for now
+    function deleteImage(idx) {
+        if (!deleteMode) return;
+        albums[currentAlbum].images.splice(idx, 1);
+        renderGallery();
+    }
+
+    function activateDeleteMode() {
+        deleteMode = true;
+        document.getElementById('deleteBar').style.display = '';
+        renderGallery();
+        document.getElementById('activateDeleteBtn').style.display = 'none';
+    }
+    function deactivateDeleteMode() {
+        deleteMode = false;
+        document.getElementById('deleteBar').style.display = 'none';
+        renderGallery();
+        document.getElementById('activateDeleteBtn').style.display = '';
+    }
+
+    function createAlbum() {
+        const name = prompt('Album name:');
+        if (name && name.trim()) {
+            albums.push({name: name.trim(), images: []});
+            currentAlbum = albums.length - 1;
+            renderAlbums();
+            renderGallery();
+        }
+    }
+
+    document.getElementById('albumSelect').addEventListener('change', function(e) {
+        currentAlbum = parseInt(e.target.value);
+        renderGallery();
+    });
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('nav-photos').classList.toggle('active', tab === 'photos');
+        document.getElementById('nav-memories').classList.toggle('active', tab === 'memories');
+        if (tab === 'photos') {
+            document.querySelector('.gallery').style.display = '';
+            document.querySelector('.controls').style.display = '';
+        } else {
+            document.querySelector('.gallery').style.display = 'none';
+            document.querySelector('.controls').style.display = 'none';
+        }
+        renderMemories();
+    }
+
+    // Initial render
+    renderAlbums();
+    fetchImagesFromBackend();
+    renderMemories();
+    </script>
 </body>
+    <!-- Image Viewer Modal -->
+    <div id="modalViewer" class="modal-viewer" onclick="closeModalViewer(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModalViewer(event)">&times;</button>
+            <button class="modal-arrow left" onclick="modalPrev(event)">&#8592;</button>
+            <img id="modalImg" class="modal-img" src="" alt="">
+            <div id="modalTitle" class="modal-title"></div>
+            <button class="modal-arrow right" onclick="modalNext(event)">&#8594;</button>
+        </div>
+    </div>
 </html>
