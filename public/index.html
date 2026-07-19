@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0c0e12" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Fam Pic Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>Eco Fam Vault</h1>
+          <p class="tagline">Memories must be kept safe</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="selectAllBtn" hidden>
+          Select all
+        </button>
+        <button type="button" class="btn ghost" id="clearSelectionBtn" hidden>
+          Clear
+        </button>
+        <button type="button" class="btn secondary" id="exportBtn" disabled>
+          Export
+        </button>
+        <label class="btn primary upload-label">
+          Upload
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/*,.heic,.heif"
+            multiple
+            hidden
+          />
+        </label>
+      </div>
+    </header>
+
+    <main>
+      <section
+        class="dropzone"
+        id="dropzone"
+        tabindex="0"
+        aria-label="Drop photos here to upload"
+      >
+        <div class="dropzone-inner">
+          <p class="drop-title">
+            <span class="desktop-only">Drop photos here</span>
+            <span class="touch-only">Add photos</span>
+          </p>
+          <p class="drop-hint">
+            <span class="desktop-only">or use Upload — JPEG, PNG, WebP, HEIC supported</span>
+            <span class="touch-only">Tap here or Upload — Camera Roll or Files</span>
+          </p>
+        </div>
+        <div class="progress" id="progress" hidden>
+          <div class="progress-bar" id="progressBar"></div>
+          <span id="progressText">Uploading…</span>
+        </div>
+      </section>
+
+      <section class="gallery-head">
+        <h2>Library</h2>
+        <p id="countLabel">No photos yet</p>
+      </section>
+
+      <section class="gallery" id="gallery" aria-live="polite"></section>
+
+      <p class="empty" id="emptyState">
+        Upload photos to start your library.
+      </p>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <div class="lightbox" id="lightbox" hidden>
+      <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">
+        ×
+      </button>
+      <img id="lightboxImg" alt="" />
+      <p id="lightboxCaption"></p>
+      <div class="lightbox-actions">
+        <button type="button" class="btn" id="lightboxDownload">Download</button>
+        <button type="button" class="btn" id="lightboxDelete">Delete</button>
+      </div>
+    </div>
+
+    <script src="/config.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

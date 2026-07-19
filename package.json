@@ -1,0 +1,19 @@
+{
+  "name": "fam-pic-vault",
+  "version": "1.0.0",
+  "description": "Family photo vault - Vercel frontend, Linux server storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build": "node scripts/write-config.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "express": "^4.21.2",
+    "multer": "^2.2.0"
+  }
+}
