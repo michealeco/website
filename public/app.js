@@ -1,8 +1,34 @@
 const API_BASE = (window.FAM_API_BASE || "").replace(/\/$/, "");
 const ON_VERCEL = /\.vercel\.app$/i.test(location.hostname);
+/** Required so free ngrok doesn't block browser fetch with its interstitial page */
+const NGROK_HEADERS = { "ngrok-skip-browser-warning": "true" };
 
 function apiUrl(path) {
   return `${API_BASE}${path}`;
+}
+
+function apiFetch(pathOrUrl, options = {}) {
+  const url = pathOrUrl.startsWith("http") ? pathOrUrl : apiUrl(pathOrUrl);
+  const headers = new Headers(options.headers || {});
+  headers.set("ngrok-skip-browser-warning", "true");
+  return fetch(url, { ...options, headers });
+}
+
+const mediaBlobCache = new Map();
+
+async function mediaSrc(url) {
+  if (!url) return "";
+  if (!API_BASE || !url.startsWith("http")) return url;
+  if (mediaBlobCache.has(url)) return mediaBlobCache.get(url);
+  try {
+    const res = await apiFetch(url);
+    if (!res.ok) return url;
+    const blobUrl = URL.createObjectURL(await res.blob());
+    mediaBlobCache.set(url, blobUrl);
+    return blobUrl;
+  } catch {
+    return url;
+  }
 }
 
 function assertApiConfigured() {
@@ -104,13 +130,17 @@ function bindLongPressSelect(card, photoId) {
   card.addEventListener("touchmove", clear, { passive: true });
   card.addEventListener("touchcancel", clear, { passive: true });
 
-  card.addEventListener("click", (e) => {
-    if (didLongPress) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      didLongPress = false;
-    }
-  }, true);
+  card.addEventListener(
+    "click",
+    (e) => {
+      if (didLongPress) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        didLongPress = false;
+      }
+    },
+    true
+  );
 }
 
 function renderGallery() {
@@ -126,18 +156,23 @@ function renderGallery() {
 
     card.innerHTML = `
       <span class="card-check" aria-hidden="true">✓</span>
-      <img src="${photo.url}" alt="${escapeAttr(photo.originalName)}" loading="lazy" decoding="async" />
+      <img alt="${escapeAttr(photo.originalName)}" loading="lazy" decoding="async" />
       <div class="card-menu">
         <button type="button" class="icon-btn" data-action="download" title="Download" aria-label="Download">↓</button>
         <button type="button" class="icon-btn danger" data-action="delete" title="Delete" aria-label="Delete">✕</button>
       </div>
     `;
 
+    const img = card.querySelector("img");
+    mediaSrc(photo.url).then((src) => {
+      img.src = src;
+    });
+
     card.addEventListener("click", (e) => {
       const action = e.target.closest("[data-action]")?.dataset.action;
       if (action === "download") {
         e.stopPropagation();
-        window.location.href = apiUrl(`/api/download/${photo.id}`);
+        downloadPhoto(photo.id);
         return;
       }
       if (action === "delete") {
@@ -187,10 +222,10 @@ function toggleSelect(id) {
   renderGallery();
 }
 
-function openLightbox(photo) {
+async function openLightbox(photo) {
   activeLightboxId = photo.id;
-  lightboxImg.src = photo.url;
   lightboxImg.alt = photo.originalName;
+  lightboxImg.src = await mediaSrc(photo.url);
   lightboxCaption.textContent = `${photo.originalName} · ${formatBytes(photo.size)}`;
   lightbox.hidden = false;
   document.body.classList.add("lightbox-open");
@@ -203,10 +238,29 @@ function closeLightbox() {
   document.body.classList.remove("lightbox-open");
 }
 
+async function downloadPhoto(id) {
+  try {
+    const res = await apiFetch(`/api/download/${id}`);
+    if (!res.ok) throw new Error("Download failed");
+    const blob = await res.blob();
+    const photo = photos.find((p) => p.id === id);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = photo?.originalName || "photo.jpg";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    toast(err.message || "Download failed");
+  }
+}
+
 async function loadPhotos() {
   if (!assertApiConfigured()) return;
   try {
-    const res = await fetch(apiUrl("/api/photos"));
+    const res = await apiFetch("/api/photos");
     if (!res.ok) throw new Error("Failed to load photos");
     const data = await res.json();
     photos = data.photos || [];
@@ -214,7 +268,7 @@ async function loadPhotos() {
     renderGallery();
   } catch (err) {
     const hint = API_BASE
-      ? " Check that your Linux API is online and CORS_ORIGIN allows this site."
+      ? " Check that your Linux API is online, ngrok is running, and Vercel API_URL matches your ngrok URL."
       : " Start the Linux API with npm start, or set API_URL for Vercel.";
     toast((err.message || "Could not load library") + hint);
   }
@@ -235,7 +289,7 @@ async function uploadFiles(files) {
   progressText.textContent = `Uploading ${list.length} photo${list.length > 1 ? "s" : ""}…`;
 
   try {
-    const res = await fetch(apiUrl("/api/upload"), { method: "POST", body: form });
+    const res = await apiFetch("/api/upload", { method: "POST", body: form });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Upload failed");
     toast(
@@ -255,7 +309,7 @@ async function uploadFiles(files) {
 async function deletePhoto(id) {
   if (!confirm("Delete this photo from the server?")) return;
   try {
-    const res = await fetch(apiUrl(`/api/photos/${id}`), { method: "DELETE" });
+    const res = await apiFetch(`/api/photos/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || "Delete failed");
@@ -272,9 +326,9 @@ async function deletePhoto(id) {
 async function exportPhotos() {
   const ids = selected.size > 0 ? [...selected] : null;
   try {
-    const res = await fetch(apiUrl("/api/export"), {
+    const res = await apiFetch("/api/export", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
       body: JSON.stringify(ids ? { ids } : {}),
     });
     if (!res.ok) {
@@ -339,9 +393,7 @@ clearSelectionBtn.addEventListener("click", () => {
 
 lightboxClose.addEventListener("click", closeLightbox);
 lightboxDownload.addEventListener("click", () => {
-  if (activeLightboxId) {
-    window.location.href = apiUrl(`/api/download/${activeLightboxId}`);
-  }
+  if (activeLightboxId) downloadPhoto(activeLightboxId);
 });
 lightboxDelete.addEventListener("click", () => {
   if (activeLightboxId) deletePhoto(activeLightboxId);
