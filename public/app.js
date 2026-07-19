@@ -1,7 +1,18 @@
 const API_BASE = (window.FAM_API_BASE || "").replace(/\/$/, "");
+const ON_VERCEL = /\.vercel\.app$/i.test(location.hostname);
 
 function apiUrl(path) {
   return `${API_BASE}${path}`;
+}
+
+function assertApiConfigured() {
+  if (ON_VERCEL && !API_BASE) {
+    toast(
+      "API_URL is not set on Vercel. Add your ngrok URL in Environment Variables, then redeploy."
+    );
+    return false;
+  }
+  return true;
 }
 
 function isImageFile(file) {
@@ -193,6 +204,7 @@ function closeLightbox() {
 }
 
 async function loadPhotos() {
+  if (!assertApiConfigured()) return;
   try {
     const res = await fetch(apiUrl("/api/photos"));
     if (!res.ok) throw new Error("Failed to load photos");
@@ -209,6 +221,7 @@ async function loadPhotos() {
 }
 
 async function uploadFiles(files) {
+  if (!assertApiConfigured()) return;
   const list = [...files].filter(isImageFile);
   if (!list.length) {
     toast("Please choose image files");
