@@ -9,7 +9,7 @@
     "build": "node scripts/write-config.js"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "dependencies": {
     "archiver": "^7.0.1",
