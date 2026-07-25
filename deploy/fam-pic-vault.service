@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=micheal
 WorkingDirectory=/opt/fam-pic-vault
-Environment=PORT=3847
+Environment=PORT=3000
 Environment=UPLOAD_DIR=/home/micheal/fam-pic-uploads
 Environment=PUBLIC_BASE_URL=https://smirk-keep-undone.ngrok-free.dev
 Environment=CORS_ORIGIN=*
