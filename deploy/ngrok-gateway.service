@@ -1,0 +1,14 @@
+[Unit]
+Description=ngrok gateway (Vault + Chorus via Nginx :8088)
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=micheal
+ExecStart=/usr/local/bin/ngrok http 8088 --url=smirk-keep-undone.ngrok-free.dev
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

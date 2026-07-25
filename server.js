@@ -91,6 +91,7 @@ const upload = multer({
 });
 
 const app = express();
+app.set("trust proxy", 1); // behind Nginx / ngrok
 
 app.use((req, res, next) => {
   setCors(req, res);
@@ -108,6 +109,19 @@ app.get("/api/health", (_req, res) => {
     storage: UPLOAD_DIR,
     publicBaseUrl: PUBLIC_BASE_URL || null,
   });
+});
+
+app.get("/", (_req, res) => {
+  res.type("html").send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Fam Pic Vault API</title>
+<style>body{font-family:system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;line-height:1.5}
+code{background:#f2f2f2;padding:.1rem .35rem;border-radius:4px}</style></head>
+<body>
+<h1>Fam Pic Vault API</h1>
+<p>This ngrok URL is the <strong>storage API</strong>, not the website.</p>
+<p>Open your <strong>Vercel</strong> site to upload photos.</p>
+<p>API check: <a href="/api/health"><code>/api/health</code></a></p>
+</body></html>`);
 });
 
 app.get("/api/photos", (_req, res) => {

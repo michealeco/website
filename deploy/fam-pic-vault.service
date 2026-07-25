@@ -1,15 +1,15 @@
 [Unit]
-Description=Fam Pic Vault API (Linux storage)
+Description=Eco Fam Vault API (Linux photo storage)
 After=network.target
 
 [Service]
 Type=simple
-User=www-data
+User=micheal
 WorkingDirectory=/opt/fam-pic-vault
-Environment=PORT=3000
-Environment=UPLOAD_DIR=/var/lib/fam-pic-vault/uploads
-Environment=PUBLIC_BASE_URL=https://pics.yourdomain.com
-Environment=CORS_ORIGIN=https://your-app.vercel.app
+Environment=PORT=3847
+Environment=UPLOAD_DIR=/home/micheal/fam-pic-uploads
+Environment=PUBLIC_BASE_URL=https://smirk-keep-undone.ngrok-free.dev
+Environment=CORS_ORIGIN=*
 Environment=SERVE_FRONTEND=0
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
