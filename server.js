@@ -101,6 +101,13 @@ const upload = multer({
   // Do not enforce a max file size here when "no max file" is requested.
   limits: { files: 50 },
   fileFilter: (_req, file, cb) => {
+    // Debug: log incoming file mimetype/name
+    try {
+      console.log(`[upload:fileFilter] ${file.originalname} -> ${file.mimetype}`);
+    } catch (e) {
+      /* ignore logging errors */
+    }
+
     if (
       ALLOWED_MIME.has(file.mimetype) ||
       file.mimetype.startsWith("image/") ||
@@ -108,6 +115,7 @@ const upload = multer({
     ) {
       cb(null, true);
     } else {
+      console.error(`[upload:fileFilter:reject] ${file.originalname} -> ${file.mimetype}`);
       cb(new Error("Only image or video files are allowed"));
     }
   },
