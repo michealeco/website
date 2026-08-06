@@ -41,10 +41,12 @@ function assertApiConfigured() {
   return true;
 }
 
-function isImageFile(file) {
-  if (file.type && file.type.startsWith("image/")) return true;
-  // iOS often leaves HEIC/HEIF with an empty MIME type
-  return /\.(jpe?g|png|gif|webp|heic|heif|tiff?|bmp)$/i.test(file.name || "");
+function isMediaFile(file) {
+  if (file.type && (file.type.startsWith("image/") || file.type.startsWith("video/"))) return true;
+  // iOS often leaves HEIC/HEIF with an empty MIME type; also accept common video extensions
+  return /\.(jpe?g|png|gif|webp|heic|heif|tiff?|bmp|mp4|webm|mov|mkv|avi|ogg|3gp)$/i.test(
+    file.name || ""
+  );
 }
 
 const gallery = document.getElementById("gallery");
@@ -60,6 +62,7 @@ const clearSelectionBtn = document.getElementById("clearSelectionBtn");
 const toastEl = document.getElementById("toast");
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
+const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
 const lightboxClose = document.getElementById("lightboxClose");
 const lightboxDownload = document.getElementById("lightboxDownload");
@@ -164,9 +167,19 @@ function renderGallery() {
     `;
 
     const img = card.querySelector("img");
-    mediaSrc(photo.url).then((src) => {
+    const previewUrl = photo.thumbnailUrl || photo.url;
+    mediaSrc(previewUrl).then((src) => {
       img.src = src;
     });
+
+    // If it's a video, add a play overlay
+    if (photo.mimeType && photo.mimeType.startsWith("video/")) {
+      card.classList.add("video");
+      const play = document.createElement("span");
+      play.className = "video-play";
+      play.textContent = "▶";
+      card.appendChild(play);
+    }
 
     card.addEventListener("click", (e) => {
       const action = e.target.closest("[data-action]")?.dataset.action;
@@ -224,9 +237,19 @@ function toggleSelect(id) {
 
 async function openLightbox(photo) {
   activeLightboxId = photo.id;
-  lightboxImg.alt = photo.originalName;
-  lightboxImg.src = await mediaSrc(photo.url);
   lightboxCaption.textContent = `${photo.originalName} · ${formatBytes(photo.size)}`;
+  if (photo.mimeType && photo.mimeType.startsWith("video/")) {
+    lightboxImg.hidden = true;
+    lightboxVideo.hidden = false;
+    lightboxVideo.src = await mediaSrc(photo.url);
+    lightboxVideo.currentTime = 0;
+    lightboxVideo.play().catch(() => {});
+  } else {
+    lightboxVideo.hidden = true;
+    lightboxImg.hidden = false;
+    lightboxImg.alt = photo.originalName;
+    lightboxImg.src = await mediaSrc(photo.url);
+  }
   lightbox.hidden = false;
   document.body.classList.add("lightbox-open");
 }
@@ -234,6 +257,10 @@ async function openLightbox(photo) {
 function closeLightbox() {
   lightbox.hidden = true;
   lightboxImg.src = "";
+  if (!lightboxVideo.hidden) {
+    lightboxVideo.pause();
+    lightboxVideo.src = "";
+  }
   activeLightboxId = null;
   document.body.classList.remove("lightbox-open");
 }
@@ -247,7 +274,7 @@ async function downloadPhoto(id) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = photo?.originalName || "photo.jpg";
+    a.download = photo?.originalName || photo?.filename || "download";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -276,9 +303,9 @@ async function loadPhotos() {
 
 async function uploadFiles(files) {
   if (!assertApiConfigured()) return;
-  const list = [...files].filter(isImageFile);
+  const list = [...files].filter(isMediaFile);
   if (!list.length) {
-    toast("Please choose image files");
+    toast("Please choose image or video files");
     return;
   }
 
@@ -286,7 +313,7 @@ async function uploadFiles(files) {
   list.forEach((f) => form.append("photos", f));
 
   progress.hidden = false;
-  progressText.textContent = `Uploading ${list.length} photo${list.length > 1 ? "s" : ""}…`;
+  progressText.textContent = `Uploading ${list.length} file${list.length > 1 ? "s" : ""}…`;
 
   try {
     const res = await apiFetch("/api/upload", { method: "POST", body: form });
@@ -294,8 +321,8 @@ async function uploadFiles(files) {
     if (!res.ok) throw new Error(data.error || "Upload failed");
     toast(
       data.photos.length === 1
-        ? "Photo saved on your Linux server"
-        : `${data.photos.length} photos saved on your Linux server`
+        ? "File saved on your Linux server"
+        : `${data.photos.length} files saved on your Linux server`
     );
     await loadPhotos();
   } catch (err) {

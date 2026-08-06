@@ -4,6 +4,12 @@ const path = require("path");
 const fs = require("fs");
 const { randomUUID } = require("crypto");
 const archiver = require("archiver");
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegStatic = require("ffmpeg-static");
+
+if (ffmpegStatic) {
+  ffmpeg.setFfmpegPath(ffmpegStatic);
+}
 
 const PORT = Number(process.env.PORT) || 3000;
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "uploads");
@@ -23,6 +29,14 @@ const ALLOWED_MIME = new Set([
   "image/heif",
   "image/tiff",
   "image/bmp",
+  // common video mime types
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "video/x-msvideo",
+  "video/x-matroska",
+  "video/ogg",
+  "video/3gpp",
 ]);
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -48,7 +62,11 @@ function mediaUrl(filename) {
 }
 
 function withAbsoluteUrls(photo) {
-  return { ...photo, url: mediaUrl(photo.filename) };
+  return {
+    ...photo,
+    url: mediaUrl(photo.filename),
+    thumbnailUrl: photo.thumbnailFilename ? mediaUrl(photo.thumbnailFilename) : undefined,
+  };
 }
 
 function setCors(req, res) {
@@ -80,12 +98,17 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: MAX_FILE_SIZE, files: 50 },
+  // Do not enforce a max file size here when "no max file" is requested.
+  limits: { files: 50 },
   fileFilter: (_req, file, cb) => {
-    if (ALLOWED_MIME.has(file.mimetype) || file.mimetype.startsWith("image/")) {
+    if (
+      ALLOWED_MIME.has(file.mimetype) ||
+      file.mimetype.startsWith("image/") ||
+      file.mimetype.startsWith("video/")
+    ) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(new Error("Only image or video files are allowed"));
     }
   },
 });
@@ -132,29 +155,65 @@ app.get("/api/photos", (_req, res) => {
   res.json({ photos });
 });
 
-app.post("/api/upload", upload.array("photos", 50), (req, res) => {
-  if (!req.files?.length) {
-    return res.status(400).json({ error: "No files uploaded" });
+app.post(
+  "/api/upload",
+  upload.array("photos", 50),
+  async (req, res) => {
+    if (!req.files?.length) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    const manifest = loadManifest();
+    const added = [];
+
+    for (const file of req.files) {
+      const photo = {
+        id: randomUUID(),
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype,
+        uploadedAt: new Date().toISOString(),
+      };
+
+      // If this is a video, try to generate a thumbnail image
+      if (file.mimetype && file.mimetype.startsWith("video/")) {
+        try {
+          const thumbName = `${file.filename}.thumb.jpg`;
+          const inputPath = path.join(UPLOAD_DIR, file.filename);
+          await new Promise((resolve, reject) => {
+            ffmpeg(inputPath)
+              .screenshots({
+                timestamps: ["1"],
+                filename: thumbName,
+                folder: UPLOAD_DIR,
+                size: "320x?",
+              })
+              .on("end", resolve)
+              .on("error", (err) => {
+                // Don't fail the whole upload if thumbnail generation fails
+                console.error("Thumbnail generation failed:", err.message || err);
+                resolve();
+              });
+          });
+          // Check if thumbnail file exists before attaching
+          const thumbPath = path.join(UPLOAD_DIR, `${file.filename}.thumb.jpg`);
+          if (fs.existsSync(thumbPath)) {
+            photo.thumbnailFilename = `${file.filename}.thumb.jpg`;
+          }
+        } catch (err) {
+          console.error("Thumbnail generation error:", err && err.message ? err.message : err);
+        }
+      }
+
+      manifest.photos.push(photo);
+      added.push(photo);
+    }
+
+    saveManifest(manifest);
+    res.status(201).json({ photos: added });
   }
-
-  const manifest = loadManifest();
-  const added = req.files.map((file) => {
-    const photo = {
-      id: randomUUID(),
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      mimeType: file.mimetype,
-      uploadedAt: new Date().toISOString(),
-      url: mediaUrl(file.filename),
-    };
-    manifest.photos.push(photo);
-    return photo;
-  });
-
-  saveManifest(manifest);
-  res.status(201).json({ photos: added });
-});
+);
 
 app.delete("/api/photos/:id", (req, res) => {
   const manifest = loadManifest();
@@ -167,6 +226,10 @@ app.delete("/api/photos/:id", (req, res) => {
   const filePath = path.join(UPLOAD_DIR, photo.filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
+  }
+  if (photo.thumbnailFilename) {
+    const thumbPath = path.join(UPLOAD_DIR, photo.thumbnailFilename);
+    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
   }
   saveManifest(manifest);
   res.json({ ok: true });
